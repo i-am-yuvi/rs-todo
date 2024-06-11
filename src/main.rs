@@ -1,4 +1,9 @@
-use std::collections::{hash_map, HashMap};
+use std::str::FromStr;
+use std::{
+    collections::{hash_map, HashMap},
+    io::Read,
+    vec,
+};
 
 struct Todo {
     //rust in-built hashmap to store key-val pairs
@@ -6,6 +11,33 @@ struct Todo {
 }
 
 impl Todo {
+    fn new() -> Result<Todo, std::io::Error> {
+        let mut f = std::fs::OpenOptions::new()
+            .write(true)
+            .create(true)
+            .read(true)
+            .open("db.txt")?;
+
+        let mut content = String::new();
+        f.read_to_string(&mut content)?;
+
+        // allocate an empty HashMap
+        let mut map = HashMap::new();
+
+        // loop over each lines of the file
+        for entries in content.lines() {
+            // split and bind values
+            let mut values = entries.split('\t');
+            let key = values.next().expect("No Key");
+            let val = values.next().expect("No Value");
+
+            // insert them into HashMap
+            map.insert(String::from(key), bool::from_str(val).unwrap());
+        }
+
+        Ok(Todo { map })
+    }
+
     fn insert(&mut self, key: String) {
         // insert a new item into our map
         // we pass true/false as value
@@ -29,9 +61,7 @@ fn main() {
 
     println!("{:?}, {:?}", action, item);
 
-    let mut todo = Todo {
-        map: HashMap::new(),
-    };
+    let mut todo = Todo::new().expect("Initialisation of db failed!");
 
     if action == "add" {
         todo.insert(item);
